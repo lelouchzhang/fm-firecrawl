@@ -1,6 +1,14 @@
 import { TanStackDevtools } from "@tanstack/react-devtools";
-import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import {
+	createRootRoute,
+	HeadContent,
+	Link,
+	Scripts,
+} from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { buttonVariants } from "#/components/ui/button";
+import { Toaster } from "#/components/ui/sonner";
+import { TooltipProvider } from "#/components/ui/tooltip";
 import { ThemeProvider } from "#/components/web/theme-provider";
 import appCss from "../styles.css?url";
 
@@ -26,6 +34,17 @@ export const Route = createRootRoute({
 		],
 	}),
 	shellComponent: RootDocument,
+	notFoundComponent: () => {
+		return (
+			<div className="flex flex-col items-center justify-center min-h-screen">
+				<h1 className="text-4xl font-bold">404</h1>
+				<p className="text-muted-foreground">Page not found</p>
+				<Link to="/" className={buttonVariants({ variant: "link" })}>
+					Go home
+				</Link>
+			</div>
+		);
+	},
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
@@ -36,7 +55,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body>
 				<ThemeProvider defaultTheme="system" storageKey="theme">
-					{children}
+					<TooltipProvider>{children}</TooltipProvider>
+					<Toaster position="top-center" />
 				</ThemeProvider>
 				<TanStackDevtools
 					config={{

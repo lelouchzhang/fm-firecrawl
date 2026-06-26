@@ -1,4 +1,8 @@
-import { Link } from "@tanstack/react-router";
+import { useForm } from "@tanstack/react-form";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { authClient } from "#/lib/auth-client";
+import { loginSchema } from "#/schema/auth";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -10,11 +14,41 @@ import {
 import {
 	Field,
 	FieldDescription,
+	FieldError,
 	FieldGroup,
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+
 export function LoginForm() {
+	const navigate = useNavigate();
+	const form = useForm({
+		defaultValues: {
+			email: "",
+			password: "",
+		},
+		validators: {
+			onSubmit: loginSchema,
+		},
+		onSubmit: async ({ value }) => {
+			await authClient.signIn.email({
+				email: value.email,
+				password: value.password,
+				fetchOptions: {
+					onSuccess: () => {
+						toast.success("Login successfully");
+						navigate({
+							to: "/dashboard",
+						});
+					},
+					onError: ({ error }) => {
+						toast.error(error.message);
+					},
+				},
+			});
+		},
+	});
+
 	return (
 		<Card className="w-full max-w-md">
 			<CardHeader>
@@ -24,29 +58,72 @@ export function LoginForm() {
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<form>
+				<form
+					onSubmit={(e) => {
+						e.preventDefault();
+						form.handleSubmit();
+					}}
+				>
 					<FieldGroup>
-						<Field>
-							<FieldLabel htmlFor="email">Email</FieldLabel>
-							<Input
-								id="email"
-								type="email"
-								placeholder="m@example.com"
-								required
-							/>
-						</Field>
-						<Field>
-							<div className="flex items-center">
-								<FieldLabel htmlFor="password">Password</FieldLabel>
-							</div>
-							<Input id="password" type="password" required />
-						</Field>
-						<Field>
-							<Button type="submit">Login</Button>
-							<FieldDescription className="text-center">
-								Don&apos;t have an account? <Link to="/signup">Sign up</Link>
-							</FieldDescription>
-						</Field>
+						<form.Field name="email">
+							{(field) => {
+								const isInvalid =
+									field.state.meta.isTouched && !field.state.meta.isValid;
+								return (
+									<Field data-invalid={isInvalid}>
+										<FieldLabel htmlFor={field.name}>email</FieldLabel>
+										<Input
+											id={field.name}
+											name={field.name}
+											type="email"
+											value={field.state.value}
+											onBlur={field.handleBlur}
+											onChange={(e) => field.handleChange(e.target.value)}
+											aria-invalid={isInvalid}
+											placeholder="m@example.com"
+											autoComplete="off"
+										/>
+										{isInvalid && (
+											<FieldError errors={field.state.meta.errors} />
+										)}
+									</Field>
+								);
+							}}
+						</form.Field>
+						<form.Field name="password">
+							{(field) => {
+								const isInvalid =
+									field.state.meta.isTouched && !field.state.meta.isValid;
+								return (
+									<Field data-invalid={isInvalid}>
+										<FieldLabel htmlFor={field.name}>password</FieldLabel>
+										<Input
+											id={field.name}
+											name={field.name}
+											type="password"
+											value={field.state.value}
+											onBlur={field.handleBlur}
+											onChange={(e) => field.handleChange(e.target.value)}
+											aria-invalid={isInvalid}
+											placeholder="********"
+											autoComplete="off"
+										/>
+										{isInvalid && (
+											<FieldError errors={field.state.meta.errors} />
+										)}
+									</Field>
+								);
+							}}
+						</form.Field>
+
+						<FieldGroup>
+							<Field>
+								<Button type="submit">Login</Button>
+								<FieldDescription className="px-6 text-center">
+									Don&apos;t have an account? <Link to="/signup">Sign up</Link>
+								</FieldDescription>
+							</Field>
+						</FieldGroup>
 					</FieldGroup>
 				</form>
 			</CardContent>
