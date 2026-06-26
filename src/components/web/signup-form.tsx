@@ -1,4 +1,8 @@
-import { Link } from "@tanstack/react-router";
+import { useForm } from "@tanstack/react-form";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { authClient } from "#/lib/auth-client";
+import { signupSchema } from "#/schema/auth";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -10,12 +14,42 @@ import {
 import {
 	Field,
 	FieldDescription,
+	FieldError,
 	FieldGroup,
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
 export function SignupForm() {
+	const navigate = useNavigate();
+	const form = useForm({
+		defaultValues: {
+			fullName: "",
+			email: "",
+			password: "",
+		},
+		validators: {
+			onSubmit: signupSchema,
+		},
+		onSubmit: async ({ value }) => {
+			await authClient.signUp.email({
+				name: value.fullName,
+				email: value.email,
+				password: value.password,
+				fetchOptions: {
+					onSuccess: () => {
+						toast.success("Account creates successfully");
+						navigate({
+							to: "/dashboard",
+						});
+					},
+					onError: ({ error }) => {
+						toast.error(error.message);
+					},
+				},
+			});
+		},
+	});
 	return (
 		<Card className="w-full max-w-md">
 			<CardHeader>
@@ -25,28 +59,87 @@ export function SignupForm() {
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<form>
+				<form
+					onSubmit={(e) => {
+						e.preventDefault();
+						form.handleSubmit();
+					}}
+				>
 					<FieldGroup>
-						<Field>
-							<FieldLabel htmlFor="name">Full Name</FieldLabel>
-							<Input id="name" type="text" placeholder="John Doe" required />
-						</Field>
-						<Field>
-							<FieldLabel htmlFor="email">Email</FieldLabel>
-							<Input
-								id="email"
-								type="email"
-								placeholder="m@example.com"
-								required
-							/>
-						</Field>
-						<Field>
-							<FieldLabel htmlFor="password">Password</FieldLabel>
-							<Input id="password" type="password" required />
-							<FieldDescription>
-								Must be at least 8 characters long.
-							</FieldDescription>
-						</Field>
+						<form.Field name="fullName">
+							{(field) => {
+								const isInvalid =
+									field.state.meta.isTouched && !field.state.meta.isValid;
+								return (
+									<Field data-invalid={isInvalid}>
+										<FieldLabel htmlFor={field.name}>full name</FieldLabel>
+										<Input
+											id={field.name}
+											name={field.name}
+											value={field.state.value}
+											onBlur={field.handleBlur}
+											onChange={(e) => field.handleChange(e.target.value)}
+											aria-invalid={isInvalid}
+											placeholder="Fen Miao"
+											autoComplete="off"
+										/>
+										{isInvalid && (
+											<FieldError errors={field.state.meta.errors} />
+										)}
+									</Field>
+								);
+							}}
+						</form.Field>
+						<form.Field name="email">
+							{(field) => {
+								const isInvalid =
+									field.state.meta.isTouched && !field.state.meta.isValid;
+								return (
+									<Field data-invalid={isInvalid}>
+										<FieldLabel htmlFor={field.name}>email</FieldLabel>
+										<Input
+											id={field.name}
+											name={field.name}
+											type="email"
+											value={field.state.value}
+											onBlur={field.handleBlur}
+											onChange={(e) => field.handleChange(e.target.value)}
+											aria-invalid={isInvalid}
+											placeholder="fenmiao@fm.com"
+											autoComplete="off"
+										/>
+										{isInvalid && (
+											<FieldError errors={field.state.meta.errors} />
+										)}
+									</Field>
+								);
+							}}
+						</form.Field>
+						<form.Field name="password">
+							{(field) => {
+								const isInvalid =
+									field.state.meta.isTouched && !field.state.meta.isValid;
+								return (
+									<Field data-invalid={isInvalid}>
+										<FieldLabel htmlFor={field.name}>password</FieldLabel>
+										<Input
+											id={field.name}
+											name={field.name}
+											type="password"
+											value={field.state.value}
+											onBlur={field.handleBlur}
+											onChange={(e) => field.handleChange(e.target.value)}
+											aria-invalid={isInvalid}
+											placeholder="********"
+											autoComplete="off"
+										/>
+										{isInvalid && (
+											<FieldError errors={field.state.meta.errors} />
+										)}
+									</Field>
+								);
+							}}
+						</form.Field>
 
 						<FieldGroup>
 							<Field>
