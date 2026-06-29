@@ -1,5 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useTransition } from "react";
 import { toast } from "sonner";
 import { authClient } from "#/lib/auth-client";
 import { signupSchema } from "#/schema/auth";
@@ -22,6 +23,7 @@ import { Input } from "@/components/ui/input";
 
 export function SignupForm() {
 	const navigate = useNavigate();
+	const [isPending, startTransition] = useTransition();
 	const form = useForm({
 		defaultValues: {
 			fullName: "",
@@ -31,22 +33,24 @@ export function SignupForm() {
 		validators: {
 			onSubmit: signupSchema,
 		},
-		onSubmit: async ({ value }) => {
-			await authClient.signUp.email({
-				name: value.fullName,
-				email: value.email,
-				password: value.password,
-				fetchOptions: {
-					onSuccess: () => {
-						toast.success("Account creates successfully");
-						navigate({
-							to: "/dashboard",
-						});
+		onSubmit: ({ value }) => {
+			startTransition(async () => {
+				await authClient.signUp.email({
+					name: value.fullName,
+					email: value.email,
+					password: value.password,
+					fetchOptions: {
+						onSuccess: () => {
+							toast.success("Account creates successfully");
+							navigate({
+								to: "/dashboard",
+							});
+						},
+						onError: ({ error }) => {
+							toast.error(error.message);
+						},
 					},
-					onError: ({ error }) => {
-						toast.error(error.message);
-					},
-				},
+				});
 			});
 		},
 	});
@@ -143,7 +147,9 @@ export function SignupForm() {
 
 						<FieldGroup>
 							<Field>
-								<Button type="submit">Create Account</Button>
+								<Button disabled={isPending} type="submit">
+									{isPending ? "Creating..." : "Create Account"}
+								</Button>
 								<FieldDescription className="px-6 text-center">
 									Already have an account? <Link to="/login">Sign in</Link>
 								</FieldDescription>
