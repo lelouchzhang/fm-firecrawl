@@ -25,7 +25,8 @@ export const Route = createFileRoute("/dashboard/import")({
 });
 
 function RouteComponent() {
-	const [isPending, startTransition] = useTransition();
+	const [isSingleImportPending, startSingleImportTransition] = useTransition();
+	const [isBulkImportPending, startBulkImportTransition] = useTransition();
 	// ETC pipeline: 1. 接受用户传入的url
 	const form = useForm({
 		defaultValues: {
@@ -35,7 +36,7 @@ function RouteComponent() {
 			onSubmit: importSchema,
 		},
 		onSubmit: ({ value }) => {
-			startTransition(async () => {
+			startSingleImportTransition(async () => {
 				console.log(value);
 			});
 		},
@@ -50,7 +51,7 @@ function RouteComponent() {
 			onSubmit: bulkImportSchema,
 		},
 		onSubmit: ({ value }) => {
-			startTransition(async () => {
+			startBulkImportTransition(async () => {
 				console.log(value);
 			});
 		},
@@ -118,8 +119,8 @@ function RouteComponent() {
 												);
 											}}
 										</form.Field>
-										<Button type="submit" disabled={isPending}>
-											{isPending ? (
+										<Button type="submit" disabled={isSingleImportPending}>
+											{isSingleImportPending ? (
 												<>
 													<Loader2 className="size-4 animate-spin" />
 													Processing...
@@ -205,8 +206,8 @@ function RouteComponent() {
 												);
 											}}
 										</bulkForm.Field>
-										<Button type="submit" disabled={isPending}>
-											{isPending ? (
+										<Button type="submit" disabled={isBulkImportPending}>
+											{isBulkImportPending ? (
 												<>
 													<Loader2 className="size-4 animate-spin" />
 													Processing...

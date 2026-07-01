@@ -124,7 +124,7 @@ export function LoginForm() {
 						<FieldGroup>
 							<Field>
 								<Button disabled={isPending} type="submit">
-									{isPending ? "Logining..." : "Login"}
+									{isPending ? "Logging in..." : "Login"}
 								</Button>
 								<FieldDescription className="px-6 text-center">
 									Don&apos;t have an account? <Link to="/signup">Sign up</Link>
