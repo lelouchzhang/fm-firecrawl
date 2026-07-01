@@ -18,6 +18,7 @@ import {
 } from "#/components/ui/field";
 import { Input } from "#/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
+import { scrapeUrlFn } from "#/data/items";
 import { bulkImportSchema, importSchema } from "#/schema/import";
 
 export const Route = createFileRoute("/dashboard/import")({
@@ -37,7 +38,7 @@ function RouteComponent() {
 		},
 		onSubmit: ({ value }) => {
 			startSingleImportTransition(async () => {
-				console.log(value);
+				await scrapeUrlFn({ data: value });
 			});
 		},
 	});
