@@ -1,21 +1,22 @@
 "use client";
 
-import { Link } from "@tanstack/react-router";
+import { Link, linkOptions } from "@tanstack/react-router";
 import {
 	AudioLinesIcon,
 	BookmarkIcon,
 	BookOpenIcon,
 	BotIcon,
+	Compass,
 	FrameIcon,
 	GalleryVerticalEndIcon,
+	Import,
 	MapIcon,
 	PieChartIcon,
 	Settings2Icon,
 	TerminalIcon,
 	TerminalSquareIcon,
 } from "lucide-react";
-import { NavMain } from "@/components/nav-main";
-import { NavProjects } from "@/components/nav-projects";
+import { NavItems } from "@/components/nav-projects";
 import { NavUser } from "@/components/nav-user";
 
 import {
@@ -28,6 +29,7 @@ import {
 	SidebarMenuItem,
 	SidebarRail,
 } from "@/components/ui/sidebar";
+import type { NavItemsProps, NavUserProps } from "../../types";
 
 // This is sample data.
 const data = {
@@ -159,9 +161,30 @@ const data = {
 	],
 };
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+const navItems: NavItemsProps["items"] = linkOptions([
+	{
+		title: "Items",
+		icon: BookmarkIcon,
+		to: "/dashboard/items",
+		activeOptions: { exact: false },
+	},
+	{
+		title: "Import",
+		icon: Import,
+		to: "/dashboard/import",
+		activeOptions: { exact: false },
+	},
+	{
+		title: "Discover",
+		icon: Compass,
+		to: "/dashboard/discover",
+		activeOptions: { exact: false },
+	},
+]);
+
+export function AppSidebar({ user }: NavUserProps) {
 	return (
-		<Sidebar collapsible="icon" {...props}>
+		<Sidebar collapsible="icon">
 			<SidebarHeader>
 				<SidebarMenu>
 					<SidebarMenuItem>
@@ -180,11 +203,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent>
-				<NavMain items={data.navMain} />
-				<NavProjects projects={data.projects} />
+				<NavItems items={navItems} />
 			</SidebarContent>
 			<SidebarFooter>
-				<NavUser user={data.user} />
+				<NavUser user={user} />
 			</SidebarFooter>
 			<SidebarRail />
 		</Sidebar>

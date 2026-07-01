@@ -13,5 +13,12 @@ export const auth = betterAuth({
 		enabled: true,
 		requireEmailVerification: false,
 	},
+	session: {
+		cookieCache: {
+			enabled: true,
+			maxAge: 60, // 1 minutes
+			strategy: "compact", // minimal cookie size
+		},
+	},
 	plugins: [tanstackStartCookies()],
 });
