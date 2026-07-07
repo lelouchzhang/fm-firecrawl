@@ -2,18 +2,19 @@ import { createServerFn } from "@tanstack/react-start";
 import type { z } from "zod";
 import { prisma } from "#/db";
 import { firecrawl } from "#/lib/firecrawl";
+import { authFunctionMiddleware } from "#/middlewares/auth";
 import { importSchema } from "#/schema/import";
 import type { extractSchema } from "./../schema/import";
-import { getSessionFn } from "./session";
 
 export const scrapeUrlFn = createServerFn({ method: "POST" })
+	.middleware([authFunctionMiddleware])
 	.validator(importSchema)
-	.handler(async ({ data }) => {
-		const user = await getSessionFn();
+	.handler(async ({ data, context }) => {
+		// const user = await getSessionFn(); 使用middleware代替
 		const item = await prisma.savedItem.create({
 			data: {
 				url: data.url,
-				userId: user.user.id,
+				userId: context.session.user.id,
 				status: "PROCESSING",
 			},
 		});
@@ -35,7 +36,7 @@ export const scrapeUrlFn = createServerFn({ method: "POST" })
 
 			let publishedAt = null;
 			if (jsonData.publishedAt) {
-				const parsed = new Date(jsonData.publishedAt);
+				const parsed = new Date(jsonData.publishedAt); // new Date(）返回时间戳或"invalid date"
 				if (!Number.isNaN(parsed.getTime())) {
 					publishedAt = parsed;
 				}
@@ -63,3 +64,5 @@ export const scrapeUrlFn = createServerFn({ method: "POST" })
 			return failedItem;
 		}
 	});
+
+export const bulkScrapeUrlsFn = createServerFn()

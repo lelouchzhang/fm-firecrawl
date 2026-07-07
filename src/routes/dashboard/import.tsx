@@ -2,6 +2,7 @@ import { useForm } from "@tanstack/react-form";
 import { createFileRoute } from "@tanstack/react-router";
 import { Globe, LinkIcon, Loader2 } from "lucide-react";
 import { useTransition } from "react";
+import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
 import {
 	Card,
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/dashboard/import")({
 function RouteComponent() {
 	const [isSingleImportPending, startSingleImportTransition] = useTransition();
 	const [isBulkImportPending, startBulkImportTransition] = useTransition();
-	// ETC pipeline: 1. 接受用户传入的url
+	// 爬取用户传入的url - scrape
 	const form = useForm({
 		defaultValues: {
 			url: "",
@@ -39,10 +40,12 @@ function RouteComponent() {
 		onSubmit: ({ value }) => {
 			startSingleImportTransition(async () => {
 				await scrapeUrlFn({ data: value });
+				toast.success("URL scraped successfully");
 			});
 		},
 	});
 
+	// 爬取用户传入url的所有子页面 - map
 	const bulkForm = useForm({
 		defaultValues: {
 			url: "",
