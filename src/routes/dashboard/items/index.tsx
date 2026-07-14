@@ -1,6 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Card } from "#/components/ui/card";
+import { Copy } from "lucide-react";
+import { Button } from "#/components/ui/button";
+import { Card, CardHeader, CardTitle } from "#/components/ui/card";
 import { getItemsFn } from "#/data/items";
+import { copyToClipboard } from "#/lib/clipboard";
+import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/dashboard/items/")({
 	component: RouteComponent,
@@ -28,6 +32,32 @@ function RouteComponent() {
 							</div>
 						)}
 					</Link>
+					<CardHeader className="space-y-3 pt-4">
+						<div className="flex items-center justify-between">
+							<Badge
+								variant={item.status === "COMPLETED" ? "default" : "secondary"}
+							>
+								{item.status.toLowerCase()}
+							</Badge>
+							<Button
+								variant="outline"
+								size="icon"
+								className="size-8"
+								onClick={async (e) => {
+									e.preventDefault();
+									await copyToClipboard(item.url);
+								}}
+							>
+								<Copy className="size-4" />
+							</Button>
+						</div>
+						<CardTitle className="line-clamp-1 text-xl leading-snug group-hover:text-primary transition-colors">
+							{item.title}
+						</CardTitle>
+						{item.author && (
+							<p className="text-xs text-muted-foreground">{item.author}</p>
+						)}
+					</CardHeader>
 				</Card>
 			))}
 		</div>
