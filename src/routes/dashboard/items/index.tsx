@@ -1,9 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Copy } from "lucide-react";
-import { Button } from "#/components/ui/button";
+﻿import { createFileRoute, Link } from "@tanstack/react-router";
+import { CopyButton } from "#/components/copybutton";
 import { Card, CardHeader, CardTitle } from "#/components/ui/card";
 import { getItemsFn } from "#/data/items";
-import { copyToClipboard } from "#/lib/clipboard";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/dashboard/items/")({
@@ -39,17 +37,7 @@ function RouteComponent() {
 							>
 								{item.status.toLowerCase()}
 							</Badge>
-							<Button
-								variant="outline"
-								size="icon"
-								className="size-8"
-								onClick={async (e) => {
-									e.preventDefault();
-									await copyToClipboard(item.url);
-								}}
-							>
-								<Copy className="size-4" />
-							</Button>
+							<CopyButton url={item.url} />
 						</div>
 						<CardTitle className="line-clamp-1 text-xl leading-snug group-hover:text-primary transition-colors">
 							{item.title}
