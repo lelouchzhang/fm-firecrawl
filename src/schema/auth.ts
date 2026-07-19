@@ -11,3 +11,7 @@ export const signupSchema = z.object({
 	email: z.email(),
 	password: z.string().min(8),
 });
+
+export const bulkUrlsSchema = z.object({
+	urls: z.array(z.url()),
+});

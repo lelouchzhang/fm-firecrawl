@@ -13,3 +13,4 @@ export interface NavItemsProps {
 export interface NavUserProps {
 	user: User;
 }
+
