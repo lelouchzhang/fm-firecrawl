@@ -1,6 +1,6 @@
 ﻿import { createFileRoute, Link } from "@tanstack/react-router";
 import { Inbox } from "lucide-react";
-import { use, useEffect, useState } from "react";
+import { Suspense, use, useEffect, useState } from "react";
 import { CopyButton } from "#/components/copybutton";
 import { buttonVariants } from "#/components/ui/button";
 import { Card, CardHeader, CardTitle } from "#/components/ui/card";
@@ -169,7 +169,10 @@ function RouteComponent() {
 					</SelectContent>
 				</Select>
 			</div>
-			<ItemsList q={q} status={status} itemsPromise={promise} />
+			{/* 5 */}
+			<Suspense>
+				<ItemsList q={q} status={status} itemsPromise={promise} />
+			</Suspense>
 		</div>
 	);
 }
