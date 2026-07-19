@@ -7,8 +7,12 @@ const COPY_RESET_MS = 2000;
 
 // 导出核心功能，createClientOnlyFn表示此功能只应在client端使用
 export const copyToClipboard = createClientOnlyFn(async (url: string) => {
-	await navigator.clipboard.writeText(url);
-	return true;
+	try {
+		await navigator.clipboard.writeText(url);
+		return true;
+	} catch (error) {
+		return false;
+	}
 });
 
 // 自定义hook，目的是管理按钮状态

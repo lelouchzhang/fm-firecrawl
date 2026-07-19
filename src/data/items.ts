@@ -33,7 +33,9 @@ export const scrapeUrlFn = createServerFn({ method: "POST" })
 				onlyMainContent: true, // @default true
 			});
 
-			const jsonData = result.json as z.infer<typeof extractSchema>;
+			const jsonData = (result.json ?? {}) as Partial<
+				z.infer<typeof extractSchema>
+			>;
 
 			let publishedAt = null;
 			if (jsonData.publishedAt) {
@@ -86,59 +88,62 @@ export const bulkScrapeUrlsFn = createServerFn({ method: "POST" })
 	.middleware([authFunctionMiddleware])
 	.validator(bulkUrlsSchema)
 	.handler(async ({ data, context }) => {
-		for (let i = 0; i < data.urls.length; i++) {
-			const url = data.urls[i];
-			const item = await prisma.savedItem.create({
-				data: {
-					url,
-					userId: context.session.user.id,
-					status: "PENDING",
-				},
-			});
-			try {
-				const result = await firecrawl.scrape(url, {
-					formats: [
-						"markdown",
-						{
-							type: "json",
-							prompt:
-								"please extract the following fields from the page: author, publishedAt",
-							// schema: extractSchema, // firecrawl 还没有适配zod v4 ？
-						},
-					],
-					onlyMainContent: true, // @default true
+		await Promise.allSettled(
+			data.urls.map(async (url) => {
+				const item = await prisma.savedItem.create({
+					data: {
+						url,
+						userId: context.session.user.id,
+						status: "PENDING",
+					},
 				});
+				try {
+					const result = await firecrawl.scrape(url, {
+						formats: [
+							"markdown",
+							{
+								type: "json",
+								prompt:
+									"please extract the following fields from the page: author, publishedAt",
+								// schema: extractSchema, // firecrawl 还没有适配zod v4 ？
+							},
+						],
+						onlyMainContent: true, // @default true
+					});
 
-				const jsonData = result.json as z.infer<typeof extractSchema>;
+					const jsonData = (result.json ?? {}) as Partial<
+						z.infer<typeof extractSchema>
+					>;
 
-				let publishedAt = null;
-				if (jsonData.publishedAt) {
-					const parsed = new Date(jsonData.publishedAt); // new Date(）返回时间戳或"invalid date"
-					if (!Number.isNaN(parsed.getTime())) {
-						publishedAt = parsed;
+					let publishedAt = null;
+					if (jsonData.publishedAt) {
+						const parsed = new Date(jsonData.publishedAt); // new Date(）返回时间戳或"invalid date"
+						if (!Number.isNaN(parsed.getTime())) {
+							publishedAt = parsed;
+						}
 					}
-				}
 
-				await prisma.savedItem.update({
-					where: { id: item.id },
-					data: {
-						title: result.metadata?.title || null,
-						content: result.markdown || null,
-						ogImage: result.metadata?.ogImage || null,
-						author: jsonData.author || null,
-						publishedAt: publishedAt,
-						status: "COMPLETED",
-					},
-				});
-			} catch (error) {
-				await prisma.savedItem.update({
-					where: { id: item.id },
-					data: {
-						status: "FAILED",
-					},
-				});
-			}
-		}
+					await prisma.savedItem.update({
+						where: { id: item.id },
+						data: {
+							title: result.metadata?.title || null,
+							content: result.markdown || null,
+							ogImage: result.metadata?.ogImage || null,
+							author: jsonData.author || null,
+							publishedAt: publishedAt,
+							status: "COMPLETED",
+						},
+					});
+				} catch (error) {
+					await prisma.savedItem.update({
+						where: { id: item.id },
+						data: {
+							status: "FAILED",
+						},
+					});
+				}
+			}),
+		);
 	});
 
 export const getItemsFn = createServerFn({ method: "GET" })

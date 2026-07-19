@@ -102,6 +102,8 @@ function RouteComponent() {
 				data: { urls: selectedUrlsArray },
 			});
 			toast.success(`${selectedUrls.size} URLs scraped successfully`);
+			setSelectedUrls(new Set());
+			setDiscoveredLinks([]);
 		});
 	}
 
