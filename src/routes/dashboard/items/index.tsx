@@ -20,6 +20,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "#/components/ui/select";
+import { Skeleton } from "#/components/ui/skeleton";
 import { getItemsFn } from "#/data/items";
 import { ItemStatus } from "#/generated/prisma/enums";
 import { type ItemsSearch, itemsSearchSchema } from "#/schema/import";
@@ -29,6 +30,30 @@ export const Route = createFileRoute("/dashboard/items/")({
 	component: RouteComponent,
 	loader: () => ({ promise: getItemsFn() }), // 1
 	validateSearch: itemsSearchSchema,
+	head: () => ({
+		meta: [
+			{ title: "Saved Items" },
+			{
+				name: "description",
+				content:
+					"Browse and manage your saved articles, bookmarks, and content.",
+			},
+			{ property: "og:title", content: "Saved Items" },
+			{
+				property: "og:description",
+				content:
+					"Browse and manage your saved articles, bookmarks, and content.",
+			},
+			{ property: "og:type", content: "website" },
+			{ name: "twitter:card", content: "summary" },
+			{ name: "twitter:title", content: "Saved Items" },
+			{
+				name: "twitter:description",
+				content:
+					"Browse and manage your saved articles, bookmarks, and content.",
+			},
+		],
+	}),
 });
 
 const ItemsList = ({
@@ -86,7 +111,11 @@ const ItemsList = ({
 					key={item.id}
 					className="group overflow-hidden transition-all hover:shadow-lg pt-0"
 				>
-					<Link to="/dashboard" className="block">
+					<Link
+						to="/dashboard/items/$itemId"
+						params={{ itemId: item.id }}
+						className="block"
+					>
 						{item.ogImage && (
 							<div className="aspect-video overflow-hidden bg-muted">
 								<img
@@ -118,6 +147,30 @@ const ItemsList = ({
 		</div>
 	);
 };
+
+function ItemsGridSkeleton() {
+	return (
+		<div className="grid gap-6 md:grid-cols-2">
+			{[1, 2, 3, 4].map((i) => (
+				<Card key={i} className="overflow-hidden pt-0">
+					<Skeleton className="aspect-video w-full" />
+					<CardHeader className="space-y-3">
+						<div className="flex items-center justify-between">
+							<Skeleton className="h-5 w-20 rounded-full" />
+							<Skeleton className="size-8 rounded-md" />
+						</div>
+
+						{/* Title */}
+						<Skeleton className="h-6 w-full" />
+
+						{/* Author  */}
+						<Skeleton className="h-4 w-40" />
+					</CardHeader>
+				</Card>
+			))}
+		</div>
+	);
+}
 
 function RouteComponent() {
 	const { promise } = Route.useLoaderData(); // 2
@@ -169,8 +222,8 @@ function RouteComponent() {
 					</SelectContent>
 				</Select>
 			</div>
-			{/* 5 */}
-			<Suspense>
+			{/* 5 Suspense 展示fallback 直到其children加载完毕 */}
+			<Suspense fallback={<ItemsGridSkeleton />}>
 				<ItemsList q={q} status={status} itemsPromise={promise} />
 			</Suspense>
 		</div>
