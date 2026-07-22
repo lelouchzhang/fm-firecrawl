@@ -1,7 +1,17 @@
 ﻿import { createFileRoute, Link } from "@tanstack/react-router";
-import { use, useEffect, useState } from "react";
+import { Inbox } from "lucide-react";
+import { Suspense, use, useEffect, useState } from "react";
 import { CopyButton } from "#/components/copybutton";
+import { buttonVariants } from "#/components/ui/button";
 import { Card, CardHeader, CardTitle } from "#/components/ui/card";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "#/components/ui/empty";
 import { Input } from "#/components/ui/input";
 import {
 	Select,
@@ -10,6 +20,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "#/components/ui/select";
+import { Skeleton } from "#/components/ui/skeleton";
 import { getItemsFn } from "#/data/items";
 import { ItemStatus } from "#/generated/prisma/enums";
 import { type ItemsSearch, itemsSearchSchema } from "#/schema/import";
@@ -17,21 +28,45 @@ import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/dashboard/items/")({
 	component: RouteComponent,
-	loader: () => getItemsFn(),
+	loader: () => ({ promise: getItemsFn() }), // 1
 	validateSearch: itemsSearchSchema,
+	head: () => ({
+		meta: [
+			{ title: "Saved Items" },
+			{
+				name: "description",
+				content:
+					"Browse and manage your saved articles, bookmarks, and content.",
+			},
+			{ property: "og:title", content: "Saved Items" },
+			{
+				property: "og:description",
+				content:
+					"Browse and manage your saved articles, bookmarks, and content.",
+			},
+			{ property: "og:type", content: "website" },
+			{ name: "twitter:card", content: "summary" },
+			{ name: "twitter:title", content: "Saved Items" },
+			{
+				name: "twitter:description",
+				content:
+					"Browse and manage your saved articles, bookmarks, and content.",
+			},
+		],
+	}),
 });
 
 const ItemsList = ({
 	q,
 	status,
-	items,
+	itemsPromise,
 }: {
 	q: ItemsSearch["q"];
 	status: ItemsSearch["status"];
-	items: Awaited<ReturnType<typeof getItemsFn>>;
-	// items: ReturnType<typeof getItemsFn>;
+	// items: Awaited<ReturnType<typeof getItemsFn>>;
+	itemsPromise: ReturnType<typeof getItemsFn>; // 3
 }) => {
-	// const itemsData = use(items);
+	const items = use(itemsPromise); // 4
 	const filteredItems = items.filter((item) => {
 		const matchesQuery =
 			q === "" ||
@@ -40,6 +75,34 @@ const ItemsList = ({
 		const matchesStatus = status === "all" || item.status === status;
 		return matchesQuery && matchesStatus;
 	});
+
+	if (filteredItems.length === 0) {
+		return (
+			<Empty className="border rounded-lg h-full">
+				<EmptyHeader>
+					<EmptyMedia variant="icon">
+						<Inbox className="size-12" />
+					</EmptyMedia>
+					<EmptyTitle>
+						{items.length === 0 ? "No Items saved yet" : "No items found"}
+					</EmptyTitle>
+					<EmptyDescription>
+						{items.length === 0
+							? "Import a URL to get started with saving your content."
+							: "No items match your current search filters."}
+					</EmptyDescription>
+				</EmptyHeader>
+				{items.length === 0 && (
+					<EmptyContent>
+						<Link className={buttonVariants()} to="/dashboard/import">
+							Import URL
+						</Link>
+					</EmptyContent>
+				)}
+			</Empty>
+		);
+	}
+
 	return (
 		<div className="grid gap-6 md:grid-cols-2">
 			{filteredItems.map((item) => (
@@ -48,7 +111,11 @@ const ItemsList = ({
 					key={item.id}
 					className="group overflow-hidden transition-all hover:shadow-lg pt-0"
 				>
-					<Link to="/dashboard" className="block">
+					<Link
+						to="/dashboard/items/$itemId"
+						params={{ itemId: item.id }}
+						className="block"
+					>
 						{item.ogImage && (
 							<div className="aspect-video overflow-hidden bg-muted">
 								<img
@@ -81,8 +148,32 @@ const ItemsList = ({
 	);
 };
 
+function ItemsGridSkeleton() {
+	return (
+		<div className="grid gap-6 md:grid-cols-2">
+			{[1, 2, 3, 4].map((i) => (
+				<Card key={i} className="overflow-hidden pt-0">
+					<Skeleton className="aspect-video w-full" />
+					<CardHeader className="space-y-3">
+						<div className="flex items-center justify-between">
+							<Skeleton className="h-5 w-20 rounded-full" />
+							<Skeleton className="size-8 rounded-md" />
+						</div>
+
+						{/* Title */}
+						<Skeleton className="h-6 w-full" />
+
+						{/* Author  */}
+						<Skeleton className="h-4 w-40" />
+					</CardHeader>
+				</Card>
+			))}
+		</div>
+	);
+}
+
 function RouteComponent() {
-	const items = Route.useLoaderData();
+	const { promise } = Route.useLoaderData(); // 2
 	const { q, status } = Route.useSearch();
 	const navigate = Route.useNavigate();
 
@@ -131,7 +222,10 @@ function RouteComponent() {
 					</SelectContent>
 				</Select>
 			</div>
-			<ItemsList q={q} status={status} items={items} />
+			{/* 5 Suspense 展示fallback 直到其children加载完毕 */}
+			<Suspense fallback={<ItemsGridSkeleton />}>
+				<ItemsList q={q} status={status} itemsPromise={promise} />
+			</Suspense>
 		</div>
 	);
 }

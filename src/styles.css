@@ -6,6 +6,9 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* for ai-sdk-chatbot-message, the Streamdown styles */
+@source "../node_modules/streamdown/dist/*.js";
+
 * {
   box-sizing: border-box;
 }
