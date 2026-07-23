@@ -91,7 +91,7 @@ function RouteComponent() {
 			return;
 		}
 
-		complete(item.content);
+		complete(item.content ?? "");
 	}
 
 	return (

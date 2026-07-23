@@ -188,7 +188,7 @@ export const saveSummaryAndGenerateTagsFn = createServerFn({
 	.validator(
 		z.object({
 			id: z.string(),
-			summary: z.string(),
+			summary: z.string().min(1).max(5000),
 		}),
 	)
 	.handler(async ({ context, data }) => {

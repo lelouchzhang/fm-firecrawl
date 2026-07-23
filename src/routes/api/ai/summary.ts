@@ -1,17 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { streamText } from "ai";
+import z from "zod";
 import { openrouter } from "#/lib/open-router";
 import { prisma } from "@/db";
+
+const MAX_PROMPT_LENGTH = 20000;
+
+const summaryRequestSchema = z.object({
+	itemId: z.string().min(1),
+	prompt: z.string().max(MAX_PROMPT_LENGTH).optional(),
+});
 
 export const Route = createFileRoute("/api/ai/summary")({
 	server: {
 		handlers: {
 			POST: async ({ request, context }) => {
-				const { itemId, prompt } = await request.json();
+				const parsed = summaryRequestSchema.safeParse(await request.json());
 
-				if (!itemId || !prompt) {
-					return new Response("Missing prompt or itemId", { status: 400 });
+				if (!parsed.success) {
+					return new Response("Invalid request body", { status: 400 });
 				}
+
+				const { itemId } = parsed.data;
 
 				const item = await prisma.savedItem.findUnique({
 					where: {
@@ -22,6 +32,11 @@ export const Route = createFileRoute("/api/ai/summary")({
 
 				if (!item) {
 					return new Response("Item not found", { status: 404 });
+				}
+				if (!item.content) {
+					return new Response("Item has no content to summarize", {
+						status: 422,
+					});
 				}
 
 				// stream summary
