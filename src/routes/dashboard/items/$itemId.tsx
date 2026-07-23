@@ -1,14 +1,17 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useCompletion } from "@ai-sdk/react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
 	ArrowLeft,
 	Calendar,
 	ChevronDown,
 	Clock,
 	ExternalLink,
+	Loader2,
+	Sparkles,
 	User,
 } from "lucide-react";
 import { useState } from "react";
-import { meta } from "zod/v4/core";
+import { toast } from "sonner";
 import { MessageResponse } from "#/components/ai-elements/message";
 import { Badge } from "#/components/ui/badge";
 import { Button, buttonVariants } from "#/components/ui/button";
@@ -18,7 +21,7 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "#/components/ui/collapsible";
-import { getItemById } from "#/data/items";
+import { getItemById, saveSummaryAndGenerateTagsFn } from "#/data/items";
 import { cn } from "#/lib/utils";
 
 export const Route = createFileRoute("/dashboard/items/$itemId")({
@@ -56,8 +59,41 @@ export const Route = createFileRoute("/dashboard/items/$itemId")({
 
 function RouteComponent() {
 	const item = Route.useLoaderData();
-
+	const router = useRouter();
 	const [open, setOpen] = useState(false);
+
+	// ai summary
+	const { complete, completion, isLoading } = useCompletion({
+		api: "/api/ai/summary",
+		initialCompletion: item.summary ? item.summary : undefined,
+		streamProtocol: "text",
+		body: {
+			itemId: item.id,
+		},
+		onFinish: async (_prompt, completion) => {
+			await saveSummaryAndGenerateTagsFn({
+				data: {
+					id: item.id,
+					summary: completion,
+				},
+			});
+			toast.success("Summary generated and saved!");
+			router.invalidate();
+		},
+		onError: (error) => {
+			toast.error(error.message);
+		},
+	});
+
+	function handleGenerateSummary() {
+		if (!item.content) {
+			toast.error("No content available to summarize");
+			return;
+		}
+
+		complete(item.content);
+	}
+
 	return (
 		<div className="mx-auto max-w-3xl space-y-6 w-full">
 			<div className="flex justify-start">
@@ -126,7 +162,45 @@ function RouteComponent() {
 					</div>
 				)}
 				{/* Summary Section */}
-				<p>summary</p>
+				<Card className="border-primary/20 bg-primary/5">
+					<CardContent>
+						<div className="flex items-start justify-between gap-4">
+							<div className="flex-1">
+								<h2 className="text-sm font-bold tracking-wide text-primary mb-3">
+									Summary
+								</h2>
+								{completion || item.summary ? (
+									<MessageResponse>{completion}</MessageResponse>
+								) : (
+									<p className="text-muted-foreground italic">
+										{item.content
+											? "No summary yet. Generate one with AI."
+											: "No content available to summarize."}
+									</p>
+								)}
+							</div>
+							{item.content && !item.summary && (
+								<Button
+									disabled={isLoading}
+									size="sm"
+									onClick={handleGenerateSummary}
+								>
+									{isLoading ? (
+										<>
+											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+											Generating...
+										</>
+									) : (
+										<>
+											<Sparkles className="mr-2 h-4 w-4" />
+											Generate
+										</>
+									)}
+								</Button>
+							)}
+						</div>
+					</CardContent>
+				</Card>
 				{/* content */}
 				{item.content && (
 					<Collapsible open={open} onOpenChange={setOpen}>
