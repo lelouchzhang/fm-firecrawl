@@ -1,8 +1,10 @@
 import { notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import { generateText } from "ai";
 import { z } from "zod";
 import { prisma } from "#/db";
 import { firecrawl } from "#/lib/firecrawl";
+import { openrouter } from "#/lib/open-router";
 import { authFunctionMiddleware } from "#/middlewares/auth";
 import { bulkUrlsSchema } from "#/schema/auth";
 import { bulkImportSchema, importSchema } from "#/schema/import";
@@ -176,5 +178,54 @@ export const getItemById = createServerFn({ method: "GET" })
 		if (!item) {
 			throw notFound();
 		}
+		return item;
+	});
+
+export const saveSummaryAndGenerateTagsFn = createServerFn({
+	method: "POST",
+})
+	.middleware([authFunctionMiddleware])
+	.validator(
+		z.object({
+			id: z.string(),
+			summary: z.string().min(1).max(5000),
+		}),
+	)
+	.handler(async ({ context, data }) => {
+		const hasItem = await prisma.savedItem.findUnique({
+			where: {
+				id: data.id,
+				userId: context.session.user.id,
+			},
+		});
+		if (!hasItem) {
+			throw notFound();
+		}
+		const { text } = await generateText({
+			model: openrouter.chat("nvidia/nemotron-3-ultra-550b-a55b:free"),
+			system: `You are a helpful assistant that extracts relevant tags from content summaries.
+Extract 3-5 short, relevant tags that categorize the content.
+Return ONLY a comma-separated list of tags, nothing else.
+Example: technology, programming, web development, javascript`,
+			prompt: `Extract tags from this summary: \n\n${data.summary}`,
+		});
+
+		const tags = text
+			.split(",")
+			.map((tag) => tag.trim().toLowerCase())
+			.filter((tag) => tag.length > 0)
+			.slice(0, 5);
+
+		const item = await prisma.savedItem.update({
+			where: {
+				userId: context.session.user.id,
+				id: data.id,
+			},
+			data: {
+				summary: data.summary,
+				tags: tags,
+			},
+		});
+
 		return item;
 	});
